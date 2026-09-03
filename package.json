@@ -9,7 +9,8 @@
     "test:serve": "TESTING_MODE=true PORT=3000 next start",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "preflight:browser": "node scripts/preflight-browser.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",
