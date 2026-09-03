@@ -82,7 +82,7 @@ export async function proxy(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith("/api/") && isRateLimited(request)) {
     return NextResponse.json({ ok: false, error: "Too many requests" }, { status: 429, headers: { "Retry-After": "60" } });
   }
-  const isPublic = request.nextUrl.pathname.startsWith("/sign-in") || request.nextUrl.pathname.startsWith("/sign-up") || request.nextUrl.pathname.startsWith("/api/auth") || request.nextUrl.pathname.startsWith("/api/config");
+  const isPublic = request.nextUrl.pathname.startsWith("/sign-in") || request.nextUrl.pathname.startsWith("/sign-up") || request.nextUrl.pathname.startsWith("/api/auth") || request.nextUrl.pathname.startsWith("/api/config") || request.nextUrl.pathname === "/api/health";
   if (!isPublic) {
     const session = await auth.api.getSession({ headers: request.headers });
     if (!session?.user) {

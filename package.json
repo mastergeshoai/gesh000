@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "preflight:browser": "node scripts/preflight-browser.mjs"
+    "preflight:browser": "node scripts/preflight-browser.mjs",
+    "ci": "npm ci && npm run check-types-errors && npm test && npm run build"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",
