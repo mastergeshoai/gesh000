@@ -11,7 +11,8 @@ export async function POST(request: Request) {
   if (!body?.projectId || !/^[a-zA-Z0-9][a-zA-Z0-9_-]{1,63}$/.test(body.projectId)) {
     return NextResponse.json({ ok: false, error: "Invalid projectId" }, { status: 400 });
   }
-  await db.insert(projectAccess).values({ id: crypto.randomUUID(), userId: session.user.id, projectId: body.projectId }).onConflictDoNothing();
+  const claimed = await db.insert(projectAccess).values({ id: crypto.randomUUID(), userId: session.user.id, projectId: body.projectId }).onConflictDoNothing().returning({ id: projectAccess.id });
+  if (!claimed.length) return NextResponse.json({ ok: false, error: "Project is unavailable" }, { status: 409 });
   return NextResponse.json({ ok: true });
 }
 

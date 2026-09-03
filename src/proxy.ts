@@ -13,7 +13,10 @@ const appOrigin = appUrl ? new URL(appUrl).origin : "";
  * - Production: NEXT_PUBLIC_APP_URL, *.totalum-project.com, or same-host (custom domains)
  */
 function isAllowedOrigin(origin: string, request: NextRequest): boolean {
-  if (!isProduction) return true;
+  if (!isProduction) {
+    const devOrigins = [appOrigin, process.env.V0_RUNTIME_URL, process.env.V0_DEV_APP_URL, process.env.V0_BUILD_URL, process.env.V0_SANDBOX_URL].filter(Boolean);
+    return devOrigins.length === 0 || devOrigins.includes(origin);
+  }
   if (appOrigin && origin === appOrigin) return true;
   if (/^https:\/\/[^/]+\.totalum-project\.com$/.test(origin)) return true;
 
@@ -46,13 +49,12 @@ function addCspHeaders(response: NextResponse) {
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  if (isProduction) response.headers.set("Strict-Transport-Security", "max-age=63072000");
   response.headers.delete("X-Frame-Options");
   return response;
 }
 
-// NOTE: Authentication has been removed — the platform is fully open and every
-// route is public. No user account is required. This proxy now only handles
-// CORS and CSP headers (needed for the live preview iframe and custom domains).
+// Authentication and response hardening are enforced centrally for every request.
 export async function proxy(request: NextRequest) {
   // Handle CORS preflight requests
   if (request.method === "OPTIONS") {

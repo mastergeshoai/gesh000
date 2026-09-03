@@ -17,4 +17,4 @@ export const verification = pgTable('verification', {
 })
 export const projectAccess = pgTable('project_access', {
   id: text('id').primaryKey(), userId: text('userId').notNull(), projectId: text('projectId').notNull(), createdAt: timestamp('createdAt').notNull().defaultNow(),
-}, (table) => ({ userProjectUnique: unique().on(table.userId, table.projectId) }))
+}, (table) => ({ userProjectUnique: unique().on(table.userId, table.projectId), projectUnique: unique().on(table.projectId) }))

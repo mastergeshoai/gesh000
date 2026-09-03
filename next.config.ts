@@ -12,7 +12,7 @@ const nextConfig: NextConfig = {
   // Hide the on-screen Next.js dev indicator (the bottom-left bubble shown
   // during `next dev`). Compile/runtime errors are still surfaced.
   devIndicators: false,
-  allowedDevOrigins: ["*"],
+  allowedDevOrigins: ["localhost", "127.0.0.1"],
   async headers() {
     // Only cache-control headers here. CSP and CORS are handled exclusively in proxy.ts
     return [

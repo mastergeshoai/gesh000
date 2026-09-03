@@ -14,16 +14,25 @@ export interface ApiResponse<T = unknown> {
   error?: any;
 }
 
+const REQUEST_TIMEOUT_MS = 30_000;
+
 async function request<T>(
   url: string,
   options?: RequestInit
 ): Promise<ApiResponse<T>> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
-    const res = await fetch(url, options);
+    const res = await fetch(url, { ...options, signal: options?.signal ?? controller.signal });
     const json = (await res.json()) as ApiResponse<T>;
-    return json;
+    if (res.status === 401 && typeof window !== "undefined") {
+      window.location.assign(`/sign-in?next=${encodeURIComponent(window.location.pathname)}`);
+    }
+    return { ...json, ok: res.ok && json.ok };
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+    return { ok: false, error: err instanceof DOMException && err.name === "AbortError" ? "Request timed out" : err instanceof Error ? err.message : String(err) };
+  } finally {
+    clearTimeout(timeout);
   }
 }
 

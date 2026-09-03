@@ -15,15 +15,8 @@ export { isRoutableProjectSlug } from "@/lib/project-slug";
  * user's and each one carries its own hidden VCaaS key — hence `resolveVcaasContext`
  * (who is asking?) and `enforceProjectScope` (may they touch THIS project?).
  *
- * This app has neither question to answer: it is a single-tenant open demo holding ONE
- * `TOTALUM_VCAAS_API_KEY` in its environment, and every project that key can reach is by
- * definition the operator's own. So both guards are honest no-ops here, and the copied
- * routes keep calling them unchanged.
- *
- * ⚠️⚠️ IF YOU EVER PUT REAL USERS BEHIND THIS APP, THIS IS THE FILE THAT MUST STOP BEING
- * A NO-OP. Deploy it as-is with a login in front and every user reaches every project the
- * key owns — the routes will not save you, because they delegate exactly this decision to
- * the two functions below.
+ * This app uses Better Auth sessions and a Neon-backed ownership table so each request
+ * is evaluated for the current user before it reaches VCaaS.
  */
 
 export interface VcaasContext {
@@ -48,7 +41,7 @@ export function authFailed(result: VcaasAuthResult): result is VcaasAuthFailed {
     return result.ok === false;
 }
 
-/** Always succeeds: the server's own API key is the caller. */
+/** Resolves the authenticated Better Auth session. */
 export async function resolveVcaasContext(): Promise<VcaasAuthResult> {
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user) {
@@ -58,9 +51,7 @@ export async function resolveVcaasContext(): Promise<VcaasAuthResult> {
 }
 
 /**
- * Always allows: every project the key can reach belongs to whoever runs this app.
- * Same signature as the platform's — `(team, method, pathSegments)` — so the routes that
- * call it need no edit.
+ * Checks that the authenticated user owns the requested project.
  */
 export async function enforceProjectScope(
     team: Record<string, never>,
