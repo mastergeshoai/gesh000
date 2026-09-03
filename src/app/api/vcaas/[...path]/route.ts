@@ -1,6 +1,7 @@
 import { vcaasRequest } from "@/lib/vcaas-server";
 import { normalizeVcaasError, toErrorEnvelope } from "@/lib/vcaas-errors";
 import { NextRequest, NextResponse } from "next/server";
+import { authFailed, enforceProjectScope, resolveVcaasContext } from "../_shared";
 
 interface VcaasApiResponse {
   /**
@@ -26,6 +27,12 @@ async function handleRequest(
   try {
     const { path } = await params;
     const vcaasPath = "/" + path.join("/");
+    const auth = await resolveVcaasContext();
+    if (authFailed(auth)) return auth.response;
+    if (path[0] === "projects" && path[1]) {
+      const outOfScope = await enforceProjectScope(auth.team, req.method, path);
+      if (outOfScope) return outOfScope;
+    }
 
     // Forward query parameters
     const url = new URL(req.url);

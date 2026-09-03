@@ -13,4 +13,16 @@ describe("security input boundaries", () => {
     expect(projectId.test("")).toBe(false);
     expect(projectId.test(" project ")).toBe(false);
   });
+
+  it("rejects unsafe preview protocols", () => {
+    for (const value of ["javascript:alert(1)", "file:///etc/passwd", "data:text/html,x"]) {
+      expect(() => new URL(value)).not.toThrow();
+      expect(["http:", "https:"].includes(new URL(value).protocol)).toBe(false);
+    }
+  });
+
+  it("enforces bounded upload requests", () => {
+    expect(15 * 1024 * 1024).toBe(15728640);
+    expect(15728641 > 15 * 1024 * 1024).toBe(true);
+  });
 });

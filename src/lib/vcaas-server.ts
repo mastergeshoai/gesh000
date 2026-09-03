@@ -11,6 +11,7 @@
  */
 /** Base URL for every Totalum VCaaS API endpoint. Single source of truth. */
 const VCAAS_BASE_URL = "https://api-accounts.totalum.app/api/v1/vcaas";
+const VCAAS_TIMEOUT_MS = 45_000;
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  SERVER LAYER — runs only inside Route Handlers (`src/app/api/vcaas/*`)
@@ -56,7 +57,10 @@ export async function vcaasRequest(
    */
   _ctx?: { accountUserId?: string }
 ): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), VCAAS_TIMEOUT_MS);
   const headers: Record<string, string> = {
+    ...(options.headers instanceof Headers ? Object.fromEntries(options.headers.entries()) : (options.headers as Record<string, string> | undefined)),
     "api-key": getVcaasApiKey(),
   };
 
@@ -67,7 +71,8 @@ export async function vcaasRequest(
   return fetch(`${VCAAS_BASE_URL}${path}`, {
     ...options,
     headers,
-  });
+    signal: options.signal ?? controller.signal,
+  }).finally(() => clearTimeout(timeout));
 }
 
 /**
