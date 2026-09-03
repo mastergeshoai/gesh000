@@ -10,6 +10,8 @@ const links = [
   { href: "/", label: "المشاريع" },
   { href: "/control-plane/providers", label: "المزودون" },
   { href: "/runtime-health", label: "حالة النظام" },
+  { href: "/pricing", label: "الاشتراكات" },
+  { href: "/account", label: "الحساب" },
 ];
 
 export function SiteHeader() {

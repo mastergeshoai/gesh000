@@ -13,6 +13,9 @@ export function SiteFooter() {
           <Link href="/" className="hover:text-foreground">المشاريع</Link>
           <Link href="/control-plane/providers" className="hover:text-foreground">المزودون</Link>
           <Link href="/runtime-health" className="hover:text-foreground">حالة النظام</Link>
+          <Link href="/about" className="hover:text-foreground">عن مستر جيشو</Link>
+          <Link href="/pricing" className="hover:text-foreground">الأسعار</Link>
+          <Link href="/contact" className="hover:text-foreground">تواصل معنا</Link>
         </nav>
         <p className="text-xs text-muted-foreground">منصة بناء تطبيقات ذكية للمطورين</p>
       </div>
