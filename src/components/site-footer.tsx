@@ -10,7 +10,7 @@ export function SiteFooter() {
           <span>مستر جيشو</span>
         </div>
         <nav className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground" aria-label="روابط التذييل">
-          <Link href="/" className="hover:text-foreground">المشاريع</Link>
+          <Link href="/projects" className="hover:text-foreground">المشاريع</Link>
           <Link href="/control-plane/providers" className="hover:text-foreground">المزودون</Link>
           <Link href="/runtime-health" className="hover:text-foreground">حالة النظام</Link>
           <Link href="/about" className="hover:text-foreground">عن مستر جيشو</Link>

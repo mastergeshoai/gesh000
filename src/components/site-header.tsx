@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 const links = [
-  { href: "/", label: "المشاريع" },
+  { href: "/projects", label: "المشاريع" },
   { href: "/control-plane/providers", label: "المزودون" },
   { href: "/runtime-health", label: "حالة النظام" },
   { href: "/pricing", label: "الاشتراكات" },
