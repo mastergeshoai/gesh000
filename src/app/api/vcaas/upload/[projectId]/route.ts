@@ -14,7 +14,7 @@ export async function POST(
     if (outOfScope) return outOfScope;
 
     const contentLength = Number(req.headers.get("content-length") ?? 0);
-    if (contentLength > 15 * 1024 * 1024) return NextResponse.json({ ok: false, error: "Upload too large" }, { status: 413 });
+    if (contentLength > 500 * 1024 * 1024) return NextResponse.json({ ok: false, error: "Upload too large" }, { status: 413 });
 
     // Forward the multipart form data straight through to the VCaaS endpoint.
     const formData = await req.formData();

@@ -22,7 +22,7 @@ describe("security input boundaries", () => {
   });
 
   it("enforces bounded upload requests", () => {
-    expect(15 * 1024 * 1024).toBe(15728640);
-    expect(15728641 > 15 * 1024 * 1024).toBe(true);
+    expect(500 * 1024 * 1024).toBe(524288000);
+    expect(524288001 > 500 * 1024 * 1024).toBe(true);
   });
 });
