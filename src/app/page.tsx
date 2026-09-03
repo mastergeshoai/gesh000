@@ -286,9 +286,10 @@ export default function DashboardPage() {
     if (!id) return;
     setCreating(true);
     const res = await vcaasApi.projects.create({ projectId: id, description: newProjectDesc.trim() });
-    if (res.ok) {
-      toast.success("Project created!"); setDialogOpen(false); setNewProjectId(""); setNewProjectDesc("");
-      router.push(`/project/${id}`);
+  if (res.ok) {
+  await api.post("/api/projects/claim", { projectId: id });
+  toast.success("Project created!"); setDialogOpen(false); setNewProjectId(""); setNewProjectDesc("");
+  router.push(`/project/${id}`);
     } else toast.error(res.error || "Failed to create project");
     setCreating(false);
   };
@@ -340,6 +341,7 @@ export default function DashboardPage() {
       }
 
       const created = launched.data.projectId;
+      await api.post("/api/projects/claim", { projectId: created });
       if (launched.data.requestedProjectId && launched.data.requestedProjectId !== created) {
         toast.info(`"${launched.data.requestedProjectId}" was taken — your project is "${created}".`);
       }
@@ -365,6 +367,7 @@ export default function DashboardPage() {
       setBuildCreating(false);
       return;
     }
+    await api.post("/api/projects/claim", { projectId: id });
     // Upload the attachments so the agent gets real, publicly-fetchable URLs (blob URLs
     // from the browser can't be read by the agent and don't survive navigation). The
     // upload endpoint needs the project to exist first, which is why this runs after

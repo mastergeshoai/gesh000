@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { auth } from "@/lib/auth";
 
 const isProduction = process.env.NODE_ENV === "production";
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
@@ -41,7 +42,10 @@ function addCorsHeaders(response: NextResponse, request: NextRequest) {
 
 // Set CSP to allow iframe embedding from any domain and remove X-Frame-Options
 function addCspHeaders(response: NextResponse) {
-  response.headers.set("Content-Security-Policy", "frame-ancestors *");
+  response.headers.set("Content-Security-Policy", "frame-ancestors 'self'");
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
   response.headers.delete("X-Frame-Options");
   return response;
 }
@@ -58,7 +62,14 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
-  // Every route is public — just attach CORS + CSP headers and continue.
+  const isPublic = request.nextUrl.pathname.startsWith("/sign-in") || request.nextUrl.pathname.startsWith("/sign-up") || request.nextUrl.pathname.startsWith("/api/auth") || request.nextUrl.pathname.startsWith("/api/config");
+  if (!isPublic) {
+    const session = await auth.api.getSession({ headers: request.headers });
+    if (!session?.user) {
+      if (request.nextUrl.pathname.startsWith("/api/")) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+      return NextResponse.redirect(new URL("/sign-in", request.url));
+    }
+  }
   const response = NextResponse.next();
   addCorsHeaders(response, request);
   addCspHeaders(response);
