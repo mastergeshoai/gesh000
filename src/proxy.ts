@@ -6,6 +6,21 @@ const isProduction = process.env.NODE_ENV === "production";
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
 // Extract origin from app URL (e.g. "https://my-app.com" from "https://my-app.com/")
 const appOrigin = appUrl ? new URL(appUrl).origin : "";
+const requestBuckets = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT = 120;
+const RATE_WINDOW_MS = 60_000;
+
+function isRateLimited(request: NextRequest) {
+  const key = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "unknown";
+  const now = Date.now();
+  const bucket = requestBuckets.get(key);
+  if (!bucket || bucket.resetAt <= now) {
+    requestBuckets.set(key, { count: 1, resetAt: now + RATE_WINDOW_MS });
+    return false;
+  }
+  bucket.count += 1;
+  return bucket.count > RATE_LIMIT;
+}
 
 /**
  * Check if an origin is allowed for CORS
@@ -64,6 +79,9 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
+  if (request.nextUrl.pathname.startsWith("/api/") && isRateLimited(request)) {
+    return NextResponse.json({ ok: false, error: "Too many requests" }, { status: 429, headers: { "Retry-After": "60" } });
+  }
   const isPublic = request.nextUrl.pathname.startsWith("/sign-in") || request.nextUrl.pathname.startsWith("/sign-up") || request.nextUrl.pathname.startsWith("/api/auth") || request.nextUrl.pathname.startsWith("/api/config");
   if (!isPublic) {
     const session = await auth.api.getSession({ headers: request.headers });
