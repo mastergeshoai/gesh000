@@ -16,7 +16,7 @@ export function LandingShowcase() {
           <h1 className="max-w-3xl text-balance text-4xl font-bold tracking-tight sm:text-6xl">حوّل فكرتك إلى منتج رقمي يليق بها</h1>
           <p className="max-w-2xl text-pretty text-lg leading-8 text-muted-foreground">مستر جيشو يساعدك على بناء تطبيقات جميلة وذكية باللغة العربية. اكتب ما تتخيله، ودع أدواتنا تتولى التفاصيل التقنية.</p>
           <div className="flex flex-wrap gap-3">
-            <Link href="/sign-up" className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-3 font-semibold text-primary-foreground transition hover:opacity-90">ابدأ مشروعك الآن <ArrowLeft data-icon="inline-end" /></Link>
+            <Link href="/projects" className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-3 font-semibold text-primary-foreground transition hover:opacity-90">ابدأ مشروعك الآن <ArrowLeft data-icon="inline-end" /></Link>
             <Link href="/about" className="inline-flex items-center rounded-lg border border-border px-5 py-3 font-semibold transition hover:bg-accent">اكتشف المنصة</Link>
           </div>
         </div>
