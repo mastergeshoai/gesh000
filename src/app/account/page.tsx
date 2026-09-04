@@ -1,4 +1,13 @@
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { UserRound, ShieldCheck, CreditCard } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-export default function AccountPage() { return <section className="mx-auto max-w-7xl px-4 pb-20 pt-16 sm:px-6 lg:px-8"><div className="flex flex-col gap-3 pb-8"><Badge variant="secondary" className="w-fit">مساحتك الشخصية</Badge><h1 className="text-4xl font-bold">الحساب والإعدادات</h1><p className="text-muted-foreground">إدارة ملفك الشخصي، أمان الحساب، وخطتك الحالية.</p></div><div className="grid gap-5 md:grid-cols-3"><Card><CardHeader><CardTitle className="flex items-center gap-2"><UserRound data-icon="inline-start" />الملف الشخصي</CardTitle></CardHeader><CardContent className="text-sm text-muted-foreground">معلومات الحساب وتفضيلات اللغة والمنطقة الزمنية.</CardContent></Card><Card><CardHeader><CardTitle className="flex items-center gap-2"><ShieldCheck data-icon="inline-start" />الأمان</CardTitle></CardHeader><CardContent className="text-sm text-muted-foreground">جلسات الدخول والحماية وإدارة الأجهزة الموثوقة.</CardContent></Card><Card><CardHeader><CardTitle className="flex items-center gap-2"><CreditCard data-icon="inline-start" />الاشتراك</CardTitle></CardHeader><CardContent className="text-sm text-muted-foreground">الخطة الحالية والرصيد وسجل الاستخدام.</CardContent></Card></div></section>; }
+import { auth } from "@/lib/auth";
+import { AccountSettings } from "@/components/account-settings";
+
+export default async function AccountPage() {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session?.user) redirect("/sign-in?callbackUrl=/account");
+  const user = session.user as typeof session.user & { language?: string; timezone?: string };
+  return <section className="mx-auto max-w-5xl px-4 pb-20 pt-16 sm:px-6 lg:px-8"><div className="flex flex-col gap-3 pb-8"><Badge variant="secondary" className="w-fit">مساحتك الشخصية</Badge><h1 className="text-4xl font-bold text-balance">الحساب والإعدادات</h1><p className="text-muted-foreground">أدر ملفك الشخصي وأمان حسابك واشتراكك من مكان واحد.</p></div><AccountSettings user={{ name: user.name, email: user.email, language: user.language || "ar", timezone: user.timezone || "Africa/Cairo" }} /></section>;
+}
