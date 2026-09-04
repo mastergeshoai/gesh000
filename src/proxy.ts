@@ -83,7 +83,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.json({ ok: false, error: "Too many requests" }, { status: 429, headers: { "Retry-After": "60" } });
   }
   const pathname = request.nextUrl.pathname;
-  const isPublic = pathname === "/" || pathname.startsWith("/sign-in") || pathname.startsWith("/sign-up") || pathname.startsWith("/about") || pathname.startsWith("/contact") || pathname.startsWith("/pricing") || pathname.startsWith("/api/auth") || pathname.startsWith("/api/config") || pathname === "/api/health";
+  const isPublic = pathname === "/" || pathname === "/projects" || pathname.startsWith("/sign-in") || pathname.startsWith("/sign-up") || pathname.startsWith("/about") || pathname.startsWith("/contact") || pathname.startsWith("/pricing") || pathname.startsWith("/api/auth") || pathname.startsWith("/api/config") || pathname === "/api/health";
   if (!isPublic) {
     const session = await auth.api.getSession({ headers: request.headers });
     if (!session?.user) {

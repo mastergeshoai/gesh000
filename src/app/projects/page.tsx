@@ -138,7 +138,6 @@ export function LandingPage() {
 }
 
 export default function DashboardPage() {
-  if (typeof window === "undefined" || !document.cookie.includes("better-auth")) return <LandingShowcase />;
   const router = useRouter();
   const [projects, setProjects] = useState<VcaasProjectSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -342,7 +341,12 @@ export default function DashboardPage() {
       });
 
       if (!launched.ok || !launched.data) {
-        setBuildError(launched.error || `Could not create "${id}". Please try a different name.`);
+        if (/unauthorized|غير مصرح|401/i.test(launched.error || "")) {
+          try { sessionStorage.setItem("vibebuild:pendingPrompt", firstPrompt.trim()); } catch { /* ignore */ }
+          router.push(`/sign-in?callbackUrl=${encodeURIComponent("/projects")}`);
+          return;
+        }
+        setBuildError(launched.error || `تعذر إنشاء «${id}». جرّب اسمًا مختلفًا.`);
         setBuildCreating(false);
         return;
       }
@@ -438,7 +442,7 @@ export default function DashboardPage() {
           </Link>
           <div className="flex items-center gap-2">
             <Link href="/">
-              <button className="text-xs text-gray-500 hover:text-gray-700 px-2.5 py-1.5 rounded-lg hover:bg-black/5 transition-colors">Home</button>
+              <button className="text-xs text-gray-500 hover:text-gray-700 px-2.5 py-1.5 rounded-lg hover:bg-black/5 transition-colors">الرئيسية</button>
             </Link>
           </div>
         </div>
@@ -456,15 +460,15 @@ export default function DashboardPage() {
                   </div>
                 )}
                 <h1 className={`font-bold tracking-tight text-gray-900 ${hasProjects ? "text-xl" : "text-3xl sm:text-4xl"}`}>
-                  What do you want to build?
+                  ماذا تريد أن تبني؟
                 </h1>
-                {!hasProjects && <p className="text-gray-500 max-w-md mx-auto mt-2 text-sm">Describe your app and AI will build it in minutes.</p>}
+                {!hasProjects && <p className="text-gray-500 max-w-md mx-auto mt-2 text-sm">صف فكرتك، وسيحوّلها الذكاء الاصطناعي إلى تطبيق خلال دقائق.</p>}
               </div>
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-gray-200/50 border border-gray-200/60 overflow-hidden">
                 <textarea
                   value={firstPrompt}
                   onChange={(e) => setFirstPrompt(e.target.value)}
-                  placeholder="Describe your app... e.g. 'A project management tool with kanban boards'"
+                  placeholder="صف تطبيقك... مثال: منصة لإدارة المشاريع بواجهات كانبان"
                   className="w-full min-h-[90px] sm:min-h-[110px] resize-none text-[15px] p-5 pb-2 outline-none placeholder:text-gray-400 bg-transparent"
                   onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); openBuildModal(); } }}
                 />
@@ -482,11 +486,11 @@ export default function DashboardPage() {
                   <label className="cursor-pointer flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors px-1.5 py-1 rounded-lg hover:bg-gray-50">
                     <input type="file" multiple className="hidden" onChange={handleFileSelect} accept="image/*,.pdf,.svg" />
                     {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}
-                    <span className="hidden sm:inline">Attach</span>
+                    <span className="hidden sm:inline">إرفاق ملف</span>
                   </label>
                   <button onClick={openBuildModal} disabled={!firstPrompt.trim() && attachedFiles.length === 0}
                     className="flex items-center gap-1.5 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-300 text-white text-xs font-medium px-4 h-8 rounded-xl transition-colors">
-                    <Send className="w-3.5 h-3.5" /><span>Build</span>
+                    <Send className="w-3.5 h-3.5" /><span>ابدأ البناء</span>
                   </button>
                 </div>
               </div>
