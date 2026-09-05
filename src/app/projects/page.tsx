@@ -421,23 +421,6 @@ export default function DashboardPage() {
     <div className="min-h-screen relative overflow-hidden">
       <div className="fixed inset-0 -z-10" style={{ background: "#fcfbf8" }} />
 
-      {/* Header */}
-      <header className="sticky top-0 z-50">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-12 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-gray-900 flex items-center justify-center">
-              <Sparkles className="w-3.5 h-3.5 text-white" />
-            </div>
-            <span className="font-semibold tracking-tight text-gray-900 text-sm">VibeBuild</span>
-          </Link>
-          <div className="flex items-center gap-2">
-            <Link href="/">
-              <button className="text-xs text-gray-500 hover:text-gray-700 px-2.5 py-1.5 rounded-lg hover:bg-black/5 transition-colors">الرئيسية</button>
-            </Link>
-          </div>
-        </div>
-      </header>
-
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
         {/* Hero prompt */}
         {!loading && (
