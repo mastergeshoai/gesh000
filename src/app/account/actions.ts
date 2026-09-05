@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { user } from "@/lib/db/schema";
+import { decryptSecret, encryptSecret, maskSecret } from "@/lib/secret-crypto";
 
 async function currentUser() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -22,6 +23,30 @@ export async function updateProfile(input: { name: string; language: string; tim
   await db.update(user).set({ name, language: input.language, timezone: input.timezone, updatedAt: new Date() }).where(eq(user.id, current.id));
   revalidatePath("/account");
   return { name, language: input.language, timezone: input.timezone };
+}
+
+export async function getTotalumKeyStatus() {
+  const current = await currentUser();
+  const row = await db.select({ ciphertext: user.totalumApiKeyCiphertext }).from(user).where(eq(user.id, current.id)).limit(1);
+  const ciphertext = row[0]?.ciphertext;
+  if (!ciphertext) return { configured: false, masked: null };
+  return { configured: true, masked: maskSecret(decryptSecret(ciphertext)) };
+}
+
+export async function saveTotalumApiKey(value: string) {
+  const current = await currentUser();
+  const key = value.trim();
+  if (key.length < 12 || key.length > 512) throw new Error("مفتاح Totalum غير صالح");
+  await db.update(user).set({ totalumApiKeyCiphertext: encryptSecret(key), totalumApiKeyUpdatedAt: new Date(), updatedAt: new Date() }).where(eq(user.id, current.id));
+  revalidatePath("/account");
+  return { configured: true, masked: maskSecret(key) };
+}
+
+export async function deleteTotalumApiKey() {
+  const current = await currentUser();
+  await db.update(user).set({ totalumApiKeyCiphertext: null, totalumApiKeyUpdatedAt: null, updatedAt: new Date() }).where(eq(user.id, current.id));
+  revalidatePath("/account");
+  return { configured: false };
 }
 
 export async function revokeOtherSessions() {

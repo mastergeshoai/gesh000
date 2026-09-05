@@ -13,6 +13,11 @@
 const VCAAS_BASE_URL = "https://api-accounts.totalum.app/api/v1/vcaas";
 const VCAAS_TIMEOUT_MS = 45_000;
 
+import { eq } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { user } from "@/lib/db/schema";
+import { decryptSecret } from "@/lib/secret-crypto";
+
 // ═══════════════════════════════════════════════════════════════════════════
 //  SERVER LAYER — runs only inside Route Handlers (`src/app/api/vcaas/*`)
 //  Reads the API key and is the only code that hits api-accounts.totalum.app.
@@ -31,7 +36,11 @@ const VCAAS_TIMEOUT_MS = 45_000;
  * `undefined` (non-public env var), so this returns `""` there — but the client
  * layer never calls it.
  */
-export function getVcaasApiKey(): string {
+export async function getVcaasApiKey(accountUserId?: string): Promise<string> {
+  if (accountUserId) {
+    const row = await db.select({ ciphertext: user.totalumApiKeyCiphertext }).from(user).where(eq(user.id, accountUserId)).limit(1);
+    if (row[0]?.ciphertext) return decryptSecret(row[0].ciphertext);
+  }
   return process.env.TOTALUM_VCAAS_API_KEY || process.env.VCAAS_API_KEY || "";
 }
 
@@ -61,7 +70,7 @@ export async function vcaasRequest(
   const timeout = setTimeout(() => controller.abort(), VCAAS_TIMEOUT_MS);
   const headers: Record<string, string> = {
     ...(options.headers instanceof Headers ? Object.fromEntries(options.headers.entries()) : (options.headers as Record<string, string> | undefined)),
-    "api-key": getVcaasApiKey(),
+    "api-key": await getVcaasApiKey(_ctx?.accountUserId),
   };
 
   if (options.body) {
@@ -88,11 +97,12 @@ export async function vcaasRequest(
  */
 export async function vcaasUploadRequest(
   path: string,
-  formData: FormData
+  formData: FormData,
+  accountUserId?: string
 ): Promise<Response> {
   return fetch(`${VCAAS_BASE_URL}${path}`, {
     method: "POST",
-    headers: { "api-key": getVcaasApiKey() },
+    headers: { "api-key": await getVcaasApiKey(accountUserId) },
     body: formData,
   });
 }

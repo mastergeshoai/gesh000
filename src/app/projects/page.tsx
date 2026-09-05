@@ -25,7 +25,6 @@ import {
 import Link from "next/link";
 import { toast } from "sonner";
 import { uploadFilesToProject as uploadFilesToProjectHelper } from "@/lib/upload";
-import { SetupBanners } from "@/components/SetupBanners";
 import type { VcaasProject, VcaasProjectSummary } from "@/lib/vcaas-types";
 
 type ViewMode = "cards" | "table";
@@ -168,15 +167,6 @@ export default function DashboardPage() {
   const [sortKey, setSortKey] = useState<SortKey>("date-desc");
   const [viewMode, setViewMode] = useState<ViewMode | null>(null);
   const [page, setPage] = useState(1);
-
-  // Whether the Totalum VCaaS API key is configured (null = still checking).
-  // When false we show the setup banners instead of nagging with API errors.
-  const [keyConfigured, setKeyConfigured] = useState<boolean | null>(null);
-  useEffect(() => {
-    api.get<{ configured: boolean }>("/api/config").then((r) => {
-      setKeyConfigured(r.ok && r.data ? r.data.configured : false);
-    });
-  }, []);
 
   /*
     ⚠️ THE PER-TILE `GET /projects/{id}` CACHE THAT LIVED HERE IS GONE. It existed only to
@@ -451,7 +441,7 @@ export default function DashboardPage() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
         {/* Hero prompt */}
         {!loading && (
-          <div className={hasProjects || keyConfigured === false ? "mb-10" : "flex flex-col items-center justify-center min-h-[50vh]"}>
+          <div className={hasProjects ? "mb-10" : "flex flex-col items-center justify-center min-h-[50vh]"}>
             <div className="w-full max-w-2xl mx-auto">
               <div className="text-center mb-6">
                 {!hasProjects && (
@@ -495,8 +485,7 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* Setup guidance — right under the prompt, only when the key is missing */}
-              {keyConfigured === false && <SetupBanners />}
+
             </div>
           </div>
         )}
