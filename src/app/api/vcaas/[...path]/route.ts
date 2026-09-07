@@ -1,6 +1,9 @@
 import { vcaasRequest } from "@/lib/vcaas-server";
 import { normalizeVcaasError, toErrorEnvelope } from "@/lib/vcaas-errors";
 import { NextRequest, NextResponse } from "next/server";
+import { eq } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { projectAccess } from "@/lib/db/schema";
 import { authFailed, enforceProjectScope, resolveVcaasContext } from "../_shared";
 
 interface VcaasApiResponse {
@@ -56,6 +59,33 @@ async function handleRequest(
     });
 
     const json = (await response.json()) as VcaasApiResponse;
+
+    /**
+     * ═══⭐⭐ THE LIST IS THE ONE UNSCOPED READ ═══════════════════════════════
+     *
+     * `enforceProjectScope` guards every `/projects/{id}/...` path, but the bare
+     * `GET /projects` list has no `{id}` to check — and this app shares ONE VCaaS
+     * key, so upstream returns every project ever created by the app, regardless
+     * of who created it. Without this filter any signed-in user's dashboard lists
+     * every other user's projects (descriptions, URLs and all). Ownership lives
+     * in `project_access`, exactly as `enforceProjectScope` reads it, so the list
+     * and the per-project guard can never disagree.
+     */
+    if (
+      req.method === "GET" &&
+      path.length === 1 &&
+      path[0] === "projects" &&
+      Array.isArray(json.data)
+    ) {
+      const owned = await db
+        .select({ projectId: projectAccess.projectId })
+        .from(projectAccess)
+        .where(eq(projectAccess.userId, auth.ctx.accountUserId));
+      const ownedIds = new Set(owned.map((row) => row.projectId));
+      json.data = (json.data as Record<string, unknown>[]).filter(
+        (project) => ownedIds.has(String(project?.projectId))
+      );
+    }
 
     /**
      * ═══⭐⭐ THE ERROR ENVELOPE THE WORKSPACE SWITCHES ON ══════════════════
