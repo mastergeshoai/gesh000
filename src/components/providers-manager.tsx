@@ -3,11 +3,14 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { ProviderCard, type CredentialView, type HealthView } from "@/components/control-plane/provider-card";
 import type { ProviderDescriptor } from "@/lib/control-plane/types";
 
 type Catalog = {
   providers: Array<{ id: string; name: string; slug: string; status: string }>;
   available: ProviderDescriptor[];
+  credentials: Record<string, CredentialView[]>;
+  health: Record<string, HealthView>;
 };
 
 export function ProvidersManager({ catalog }: { catalog: Catalog }) {
@@ -42,29 +45,42 @@ export function ProvidersManager({ catalog }: { catalog: Catalog }) {
       <div className="flex flex-col gap-2">
         <p className="text-sm text-muted-foreground">لوحة تحكم المدير العام</p>
         <h1 className="text-balance text-3xl font-semibold tracking-tight">سجل مزودي الذكاء الاصطناعي</h1>
-        <p className="max-w-2xl leading-relaxed text-muted-foreground">إدارة المزودين المسجلين من الخادم. لا يتم عرض أو تخزين مفاتيح الوصول في هذه الواجهة.</p>
+        <p className="max-w-2xl leading-relaxed text-muted-foreground">إدارة المزودين المسجلين من الخادم: فحص الصحة، ومفاتيح الوصول المشفّرة التي لا تُعرض كاملة أبدًا.</p>
       </div>
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-      <div className="grid gap-4 md:grid-cols-2">
-        {catalog.available.map((item) => {
-          const added = catalog.providers.some((provider) => provider.slug === item.slug);
-          return (
-            <article key={item.slug} className="flex flex-col gap-5 rounded-xl border border-border bg-card p-5 text-card-foreground">
-              <div><h2 className="font-medium">{item.name}</h2><p className="font-mono text-sm text-muted-foreground">{item.adapterKey}</p></div>
-              <p className="text-sm text-muted-foreground">{Object.keys(item.capabilities).filter((key) => item.capabilities[key]).join(" · ")}</p>
-              <Button disabled={busy || refreshing || added} onClick={() => void addProvider(item)}>{added ? "مضاف" : busy || refreshing ? "جارٍ التحديث…" : "إضافة إلى السجل"}</Button>
-            </article>
-          );
-        })}
-      </div>
+
       <div className="flex flex-col gap-3" aria-live="polite">
         <h2 className="text-lg font-medium">المزودون المسجلون</h2>
-        {catalog.providers.length ? catalog.providers.map((provider) => (
-          <div key={provider.id} className="flex items-center justify-between rounded-lg border border-border bg-card p-4 text-card-foreground">
-            <div><p className="font-medium">{provider.name}</p><p className="font-mono text-sm text-muted-foreground">{provider.slug}</p></div>
-            <span className="text-sm text-muted-foreground">{provider.status === "disabled" ? "معطّل" : provider.status}</span>
+        {catalog.providers.length ? (
+          <div className="grid gap-4">
+            {catalog.providers.map((provider) => (
+              <ProviderCard
+                key={provider.id}
+                provider={provider}
+                credentials={catalog.credentials[provider.id] ?? []}
+                health={catalog.health[provider.id] ?? null}
+              />
+            ))}
           </div>
-        )) : <p className="rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground">لا يوجد مزودون مسجلون بعد.</p>}
+        ) : (
+          <p className="rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground">لا يوجد مزودون مسجلون بعد.</p>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <h2 className="text-lg font-medium">مزودون متاحون للإضافة</h2>
+        <div className="grid gap-4 md:grid-cols-2">
+          {catalog.available.map((item) => {
+            const added = catalog.providers.some((provider) => provider.slug === item.slug);
+            return (
+              <article key={item.slug} className="flex flex-col gap-5 rounded-xl border border-border bg-card p-5 text-card-foreground">
+                <div><h3 className="font-medium">{item.name}</h3><p className="font-mono text-sm text-muted-foreground">{item.adapterKey}</p></div>
+                <p className="text-sm text-muted-foreground">{Object.keys(item.capabilities).filter((key) => item.capabilities[key]).join(" · ")}</p>
+                <Button disabled={busy || refreshing || added} onClick={() => void addProvider(item)}>{added ? "مضاف" : busy || refreshing ? "جارٍ التحديث…" : "إضافة إلى السجل"}</Button>
+              </article>
+            );
+          })}
+        </div>
       </div>
     </section>
   );

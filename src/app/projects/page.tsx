@@ -283,7 +283,8 @@ export default function DashboardPage() {
     setCreating(true);
     const res = await vcaasApi.projects.create({ projectId: id, description: newProjectDesc.trim() });
   if (res.ok) {
-  await api.post("/api/projects/claim", { projectId: id });
+  const claimed = await api.post("/api/projects/claim", { projectId: id });
+  if (!claimed.ok) { toast.error("Project created, but we couldn't register it to your account. Please try again or contact support."); setCreating(false); return; }
   toast.success("Project created!"); setDialogOpen(false); setNewProjectId(""); setNewProjectDesc("");
   router.push(`/project/${id}`);
     } else toast.error(res.error || "Failed to create project");
@@ -342,7 +343,12 @@ export default function DashboardPage() {
       }
 
       const created = launched.data.projectId;
-      await api.post("/api/projects/claim", { projectId: created });
+      const claimedLaunch = await api.post("/api/projects/claim", { projectId: created });
+      if (!claimedLaunch.ok) {
+        setBuildError("Project created, but we couldn't register it to your account. Please try again or contact support.");
+        setBuildCreating(false);
+        return;
+      }
       if (launched.data.requestedProjectId && launched.data.requestedProjectId !== created) {
         toast.info(`"${launched.data.requestedProjectId}" was taken — your project is "${created}".`);
       }
@@ -368,7 +374,12 @@ export default function DashboardPage() {
       setBuildCreating(false);
       return;
     }
-    await api.post("/api/projects/claim", { projectId: id });
+    const claimed = await api.post("/api/projects/claim", { projectId: id });
+    if (!claimed.ok) {
+      setBuildError("Project created, but we couldn't register it to your account. Please try again or contact support.");
+      setBuildCreating(false);
+      return;
+    }
     // Upload the attachments so the agent gets real, publicly-fetchable URLs (blob URLs
     // from the browser can't be read by the agent and don't survive navigation). The
     // upload endpoint needs the project to exist first, which is why this runs after

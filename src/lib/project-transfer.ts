@@ -167,6 +167,14 @@ const ERROR_KEYS: Record<string, TranslationKey> = {
      * button this dialog is showing them until they give up.
      */
     MAX_PROJECTS_REACHED: "transfer.error.projectLimitReached",
+    /**
+     * ⭐ APP-SPECIFIC, NOT AN UPSTREAM CODE. This app gates the dashboard list and
+     * the project page on `project_access` ownership, so a project that was
+     * created but could not be claimed is charged-for and unreachable — the flow
+     * must stop BEFORE the import spends more credits on a project the user
+     * cannot open.
+     */
+    CLAIM_FAILED: "transfer.error.claimFailed",
 };
 
 /**

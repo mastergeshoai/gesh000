@@ -15,7 +15,20 @@ export const auth = betterAuth({
   trustedOrigins,
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: false,
+    requireEmailVerification: true,
+    sendVerificationEmail: async ({ user, url, token }) => {
+      const resend = new Resend(process.env.RESEND_API_KEY)
+      const from = process.env.RESEND_EMAIL_DOMAIN
+        ? `مستر جيشو <noreply@${process.env.RESEND_EMAIL_DOMAIN}>`
+        : 'مستر جيشو <onboarding@resend.dev>'
+      const { error } = await resend.emails.send({
+        from,
+        to: [user.email],
+        subject: 'تأكيد بريدك الإلكتروني — مستر جيشو',
+        html: `<div dir="rtl" style="font-family:Arial,sans-serif"><h2>تأكيد البريد الإلكتروني</h2><p>مرحبًا ${user.name}،</p><p>اضغط على الرابط التالي لتأكيد بريدك وتفعيل حسابك:</p><p><a href="${url}">تأكيد البريد الإلكتروني</a></p><p>إذا لم تنشئ هذا الحساب، يمكنك تجاهل هذه الرسالة.</p></div>`,
+      }, { idempotencyKey: `verify-email/${user.id}/${token}` })
+      if (error) console.error('[v0] Failed to send verification email:', error.message)
+    },
     sendResetPassword: async ({ user, url }) => {
       const resend = new Resend(process.env.RESEND_API_KEY)
       const from = process.env.RESEND_EMAIL_DOMAIN
