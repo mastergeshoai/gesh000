@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { vcaasUploadRequest } from "@/lib/vcaas-server";
+import { authFailed, enforceProjectScope, resolveVcaasContext } from "../../_shared";
 
 export async function POST(
   req: NextRequest,
@@ -7,6 +8,13 @@ export async function POST(
 ) {
   try {
     const { projectId } = await params;
+    const auth = await resolveVcaasContext();
+    if (authFailed(auth)) return auth.response;
+    const outOfScope = await enforceProjectScope(auth.team, "POST", ["projects", projectId]);
+    if (outOfScope) return outOfScope;
+
+    const contentLength = Number(req.headers.get("content-length") ?? 0);
+    if (contentLength > 500 * 1024 * 1024) return NextResponse.json({ ok: false, error: "Upload too large" }, { status: 413 });
 
     // Forward the multipart form data straight through to the VCaaS endpoint.
     const formData = await req.formData();

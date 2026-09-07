@@ -1,10 +1,26 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { auth } from "@/lib/auth";
 
 const isProduction = process.env.NODE_ENV === "production";
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
 // Extract origin from app URL (e.g. "https://my-app.com" from "https://my-app.com/")
 const appOrigin = appUrl ? new URL(appUrl).origin : "";
+const requestBuckets = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT = 120;
+const RATE_WINDOW_MS = 60_000;
+
+function isRateLimited(request: NextRequest) {
+  const key = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "unknown";
+  const now = Date.now();
+  const bucket = requestBuckets.get(key);
+  if (!bucket || bucket.resetAt <= now) {
+    requestBuckets.set(key, { count: 1, resetAt: now + RATE_WINDOW_MS });
+    return false;
+  }
+  bucket.count += 1;
+  return bucket.count > RATE_LIMIT;
+}
 
 /**
  * Check if an origin is allowed for CORS
@@ -12,7 +28,10 @@ const appOrigin = appUrl ? new URL(appUrl).origin : "";
  * - Production: NEXT_PUBLIC_APP_URL, *.totalum-project.com, or same-host (custom domains)
  */
 function isAllowedOrigin(origin: string, request: NextRequest): boolean {
-  if (!isProduction) return true;
+  if (!isProduction) {
+    const devOrigins = [appOrigin, process.env.V0_RUNTIME_URL, process.env.V0_DEV_APP_URL, process.env.V0_BUILD_URL, process.env.V0_SANDBOX_URL].filter(Boolean);
+    return devOrigins.length === 0 || devOrigins.includes(origin);
+  }
   if (appOrigin && origin === appOrigin) return true;
   if (/^https:\/\/[^/]+\.totalum-project\.com$/.test(origin)) return true;
 
@@ -41,14 +60,16 @@ function addCorsHeaders(response: NextResponse, request: NextRequest) {
 
 // Set CSP to allow iframe embedding from any domain and remove X-Frame-Options
 function addCspHeaders(response: NextResponse) {
-  response.headers.set("Content-Security-Policy", "frame-ancestors *");
+  response.headers.set("Content-Security-Policy", "frame-ancestors 'self'");
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  if (isProduction) response.headers.set("Strict-Transport-Security", "max-age=63072000");
   response.headers.delete("X-Frame-Options");
   return response;
 }
 
-// NOTE: Authentication has been removed — the platform is fully open and every
-// route is public. No user account is required. This proxy now only handles
-// CORS and CSP headers (needed for the live preview iframe and custom domains).
+// Authentication and response hardening are enforced centrally for every request.
 export async function proxy(request: NextRequest) {
   // Handle CORS preflight requests
   if (request.method === "OPTIONS") {
@@ -58,7 +79,18 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
-  // Every route is public — just attach CORS + CSP headers and continue.
+  if (request.nextUrl.pathname.startsWith("/api/") && isRateLimited(request)) {
+    return NextResponse.json({ ok: false, error: "Too many requests" }, { status: 429, headers: { "Retry-After": "60" } });
+  }
+  const pathname = request.nextUrl.pathname;
+  const isPublic = pathname === "/" || pathname === "/projects" || pathname.startsWith("/sign-in") || pathname.startsWith("/sign-up") || pathname.startsWith("/forgot-password") || pathname.startsWith("/reset-password") || pathname.startsWith("/about") || pathname.startsWith("/contact") || pathname.startsWith("/pricing") || pathname.startsWith("/api/auth") || pathname.startsWith("/api/config") || pathname === "/api/health";
+  if (!isPublic) {
+    const session = await auth.api.getSession({ headers: request.headers });
+    if (!session?.user) {
+      if (request.nextUrl.pathname.startsWith("/api/")) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+      return NextResponse.redirect(new URL("/sign-in", request.url));
+    }
+  }
   const response = NextResponse.next();
   addCorsHeaders(response, request);
   addCspHeaders(response);

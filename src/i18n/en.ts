@@ -5055,6 +5055,10 @@ export const en = {
       /* ⚠️ Retrying never clears this one — say what actually does. */
       projectLimitReached:
         "Your plan's projects are all in use, so there's no room for a new one. Delete a project you no longer need, or move up a plan.",
+      /* App-specific: the ownership claim after create failed, so the import
+         must not spend more credits on a project the user cannot open. */
+      claimFailed:
+        "The project was created, but we couldn't register it to your account. Nothing else was charged — contact support and we'll sort it out.",
     },
 
     export: {

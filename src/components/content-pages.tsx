@@ -1,0 +1,18 @@
+import Link from "next/link";
+import { ArrowLeft, Check, Sparkles } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+export function ContentHero({ eyebrow, title, description }: { eyebrow: string; title: string; description: string }) {
+  return <section className="mx-auto flex max-w-7xl flex-col gap-5 px-4 pb-10 pt-16 sm:px-6 lg:px-8"><Badge variant="secondary" className="w-fit gap-2"><Sparkles data-icon="inline-start" />{eyebrow}</Badge><h1 className="max-w-3xl text-balance text-4xl font-bold tracking-tight sm:text-6xl">{title}</h1><p className="max-w-2xl text-pretty text-lg leading-8 text-muted-foreground">{description}</p></section>;
+}
+
+export function PricingContent() {
+  const plans = [{ name: "البداية", price: "مجاني", description: "لاستكشاف البناء بالذكاء الاصطناعي", features: ["مشروع واحد", "رصيد تجريبي", "معاينة فورية"] }, { name: "المحترف", price: "49 ر.س", description: "للمطورين الذين يبنون باستمرار", features: ["مشاريع غير محدودة", "رصيد شهري", "أولوية في الدعم"] }, { name: "الفرق", price: "149 ر.س", description: "لفرق المنتجات والوكالات", features: ["مساحات عمل مشتركة", "صلاحيات متقدمة", "مراقبة واستخدام"] }];
+  return <><ContentHero eyebrow="خطط واضحة" title="ابنِ أكثر، بدون مفاجآت" description="اختر الخطة التي تناسب إيقاعك. يمكنك الترقية أو التغيير في أي وقت." /><section className="mx-auto grid max-w-7xl gap-5 px-4 pb-20 md:grid-cols-3 sm:px-6 lg:px-8">{plans.map((plan, index) => <Card key={plan.name} className={index === 1 ? "border-primary shadow-lg" : undefined}><CardHeader><CardTitle className="flex items-center justify-between text-xl">{plan.name}{index === 1 && <Badge>الأكثر اختيارًا</Badge>}</CardTitle><p className="text-sm text-muted-foreground">{plan.description}</p><p className="pt-4 text-3xl font-bold">{plan.price}<span className="text-sm font-normal text-muted-foreground"> / شهريًا</span></p></CardHeader><CardContent className="flex flex-col gap-5"><ul className="flex flex-col gap-3 text-sm">{plan.features.map((feature) => <li key={feature} className="flex items-center gap-2"><Check className="text-primary" data-icon="inline-start" />{feature}</li>)}</ul><Button variant={index === 1 ? "default" : "outline"} asChild><Link href="/sign-up">ابدأ الآن <ArrowLeft data-icon="inline-end" /></Link></Button></CardContent></Card>)}</section></>;
+}
+
+export function AboutContent() { return <><ContentHero eyebrow="عن مستر جيشو" title="الأفكار العربية تستحق أدوات عالمية" description="مستر جيشو مساحة عمل تساعدك على تحويل الفكرة إلى منتج قابل للتجربة، مع الذكاء الاصطناعي في قلب العملية." /><section className="mx-auto grid max-w-7xl gap-5 px-4 pb-20 md:grid-cols-3 sm:px-6 lg:px-8">{[{ title: "وضوح", text: "من أول وصف حتى أول معاينة، كل خطوة مفهومة." }, { title: "سرعة", text: "اختصر الطريق بين الفكرة والكود العامل." }, { title: "تحكم", text: "امتلك مشاريعك، إعداداتك، وبيانات استخدامك." }].map((item) => <Card key={item.title}><CardHeader><CardTitle>{item.title}</CardTitle></CardHeader><CardContent className="leading-7 text-muted-foreground">{item.text}</CardContent></Card>)}</section></>; }
+
+export function ContactContent() { return <><ContentHero eyebrow="نحن هنا" title="لنبنِ شيئًا مفيدًا" description="للاستفسارات والشراكات والدعم، أرسل لنا رسالة وسنعود إليك." /><section className="mx-auto max-w-2xl px-4 pb-20 sm:px-6"><Card><CardContent className="flex flex-col gap-4 pt-6"><Button asChild><a href="mailto:hello@mistergesho.com">hello@mistergesho.com</a></Button><p className="text-center text-sm text-muted-foreground">الدعم متاح لمستخدمي الخطط المدفوعة من داخل مساحة العمل.</p></CardContent></Card></section></>; }

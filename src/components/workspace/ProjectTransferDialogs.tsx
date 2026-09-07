@@ -21,6 +21,7 @@ import { Switch } from "@/components/ui/switch";
 import { useT } from "@/i18n";
 import type { TranslationKey } from "@/i18n";
 import { vcaasApi } from "@/lib/vcaas";
+import { api } from "@/lib/api";
 import { writeOperation } from "@/lib/project-operation";
 import {
     CLONE_COST,
@@ -717,6 +718,21 @@ function useTransferRun() {
              */
             slug = created.data?.projectId || targetName;
             setCreatedSlug(slug);
+            /**
+             * ⭐ CLAIM OWNERSHIP THE MOMENT THE PROJECT EXISTS. The dashboard list
+             * and the project page both gate on `project_access`, so an unclaimed
+             * project is invisible to its creator — a paid import that "succeeded"
+             * and then vanished. Claiming BEFORE the import (not after) means even
+             * a failed import leaves the half-built project owned and reachable,
+             * which is exactly what the failure copy below links to. The claim is
+             * idempotent server-side, so a retry after a partial failure is safe.
+             */
+            const claimed = await api.post("/api/projects/claim", { projectId: slug });
+            if (!claimed.ok) {
+                setPhase("failed");
+                setFailure({ code: "CLAIM_FAILED", message: claimed.error ?? null });
+                return;
+            }
         }
 
         setPhase("importing");
