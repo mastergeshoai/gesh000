@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { auth } from "@/lib/auth";
+import { requireAdmin } from "@/lib/admin";
 import { availableProviderAdapters, createProvider, listProviders } from "@/lib/control-plane/service";
 import type { ProviderDescriptor } from "@/lib/control-plane/types";
 
 async function userId() {
-  const session = await auth.api.getSession({ headers: await headers() });
-  return session?.user?.id ?? null;
+  try {
+    const admin = await requireAdmin();
+    return admin.id;
+  } catch {
+    return null;
+  }
 }
 
 export async function GET() {
