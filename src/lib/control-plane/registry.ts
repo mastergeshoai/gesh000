@@ -28,7 +28,7 @@ const vcaasProvider: ProviderDescriptor = {
 };
 
 registerProvider({
-  key: "vcaas",
+  key: vcaasProvider.adapterKey,
   provider: vcaasProvider,
   async test() {
     const started = Date.now();

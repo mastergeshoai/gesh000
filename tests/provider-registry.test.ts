@@ -7,6 +7,12 @@ describe("provider registry", () => {
     expect(getProviderAdapter("not-registered")).toBeUndefined();
   });
 
+  it("resolves every advertised adapter key", () => {
+    for (const provider of listProviderAdapters()) {
+      expect(getProviderAdapter(provider.adapterKey)?.provider).toEqual(provider);
+    }
+  });
+
   it("does not expose credentials in provider definitions", () => {
     const provider = listProviderAdapters()[0];
     expect(provider).not.toHaveProperty("apiKey");

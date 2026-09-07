@@ -1,36 +1,38 @@
 import { NextResponse } from "next/server";
-import { headers } from "next/headers";
-import { requireAdmin } from "@/lib/admin";
+import { z } from "zod";
+import { AdminAccessError, requireAdmin } from "@/lib/admin";
 import { availableProviderAdapters, createProvider, listProviders } from "@/lib/control-plane/service";
-import type { ProviderDescriptor } from "@/lib/control-plane/types";
 
-async function userId() {
-  try {
-    const admin = await requireAdmin();
-    return admin.id;
-  } catch {
-    return null;
-  }
+const providerInput = z.object({
+  slug: z.string().min(1).max(80),
+  name: z.string().min(1).max(120),
+  adapterKey: z.string().min(1).max(80),
+  capabilities: z.record(z.string().min(1).max(80), z.boolean()),
+});
+
+function failure(error: unknown) {
+  if (error instanceof AdminAccessError) return NextResponse.json({ error: error.message }, { status: error.status });
+  if (error instanceof Error && error.message === "UNSUPPORTED_PROVIDER") return NextResponse.json({ error: "Unsupported provider" }, { status: 422 });
+  return NextResponse.json({ error: "Unable to access provider registry" }, { status: 500 });
 }
 
 export async function GET() {
-  const id = await userId();
-  if (!id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  return NextResponse.json({ providers: await listProviders(id), available: availableProviderAdapters() });
+  try {
+    const admin = await requireAdmin();
+    return NextResponse.json({ providers: await listProviders(admin.id), available: availableProviderAdapters() });
+  } catch (error) {
+    return failure(error);
+  }
 }
 
 export async function POST(request: Request) {
-  const id = await userId();
-  if (!id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const body = (await request.json()) as Partial<ProviderDescriptor>;
-  if (!body.slug || !body.name || !body.adapterKey || !Array.isArray(body.capabilities)) {
-    return NextResponse.json({ error: "Invalid provider definition" }, { status: 400 });
-  }
   try {
-    const provider = await createProvider(id, body as ProviderDescriptor);
+    const admin = await requireAdmin();
+    const parsed = providerInput.safeParse(await request.json().catch(() => null));
+    if (!parsed.success) return NextResponse.json({ error: "Invalid provider definition" }, { status: 400 });
+    const provider = await createProvider(admin.id, parsed.data);
     return NextResponse.json({ provider }, { status: 201 });
   } catch (error) {
-    if (error instanceof Error && error.message === "UNSUPPORTED_PROVIDER") return NextResponse.json({ error: "Unsupported provider" }, { status: 422 });
-    return NextResponse.json({ error: "Unable to create provider" }, { status: 500 });
+    return failure(error);
   }
 }
